@@ -14,7 +14,11 @@ export async function getServerSideProps({ req }) {
     return { redirect: { destination: "/login", permanent: false } };
   }
   const settings = await getJsonFile("settings.json", DEFAULT_SETTINGS);
-  return { props: { initialSettings: { ...DEFAULT_SETTINGS, ...settings } } };
+  return {
+    props: {
+      initialSettings: { ...DEFAULT_SETTINGS, ...settings },
+    },
+  };
 }
 
 export default function Settings({ initialSettings }) {
@@ -26,80 +30,227 @@ export default function Settings({ initialSettings }) {
     e.preventDefault();
     setSaving(true);
     setMessage("");
-    const res = await fetch("/api/settings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(settings),
-    });
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settings),
+      });
+      setMessage(
+        res.ok
+          ? "Saved. Changes take effect on the next bot run."
+          : "Failed to save."
+      );
+    } catch {
+      setMessage("Failed to save.");
+    }
     setSaving(false);
-    setMessage(res.ok ? "Saved! Takes effect on the next bot run." : "Failed to save.");
   }
 
   function toggleSymbol(sym) {
     setSettings((s) => ({
       ...s,
-      symbols_enabled: { ...s.symbols_enabled, [sym]: !s.symbols_enabled[sym] },
+      symbols_enabled: {
+        ...s.symbols_enabled,
+        [sym]: !s.symbols_enabled[sym],
+      },
     }));
   }
 
   return (
-    <div style={{ maxWidth: 500, margin: "40px auto", fontFamily: "sans-serif", padding: "0 16px" }}>
-      <h1>Settings</h1>
-      <a href="/">Back to dashboard</a>
-      <form onSubmit={handleSave} style={{ marginTop: 20 }}>
-        <label style={{ display: "block", marginBottom: 12 }}>
-          Risk % per trade (e.g. 0.05 = 5%)
-          <input
-            type="number"
-            step="0.01"
-            min="0.01"
-            max="1"
-            value={settings.risk_percent}
-            onChange={(e) => setSettings({ ...settings, risk_percent: parseFloat(e.target.value) })}
-            style={{ display: "block", width: "100%", padding: 8, marginTop: 4, boxSizing: "border-box" }}
-          />
-        </label>
+    <div style={styles.page}>
+      <div style={styles.container}>
+        <div style={styles.header}>
+          <h1 style={styles.title}>Settings</h1>
+          <a href="/" style={styles.back}>
+            ← Back to terminal
+          </a>
+        </div>
 
-        <label style={{ display: "block", marginBottom: 12 }}>
-          Account balance ($)
-          <input
-            type="number"
-            step="1"
-            value={settings.account_balance}
-            onChange={(e) => setSettings({ ...settings, account_balance: parseFloat(e.target.value) })}
-            style={{ display: "block", width: "100%", padding: 8, marginTop: 4, boxSizing: "border-box" }}
-          />
-        </label>
+        <form onSubmit={handleSave} style={styles.form}>
+          <label style={styles.label}>
+            Risk % per trade
+            <span style={styles.hint}>e.g. 0.05 = 5%</span>
+            <input
+              type="number"
+              step="0.01"
+              min="0.01"
+              max="1"
+              value={settings.risk_percent}
+              onChange={(e) =>
+                setSettings({
+                  ...settings,
+                  risk_percent: parseFloat(e.target.value) || 0,
+                })
+              }
+              style={styles.input}
+            />
+          </label>
 
-        <fieldset style={{ marginBottom: 12 }}>
-          <legend>Symbols enabled</legend>
-          {["NAS100", "XAUUSD", "EURUSD"].map((sym) => (
-            <label key={sym} style={{ display: "block" }}>
-              <input
-                type="checkbox"
-                checked={!!settings.symbols_enabled[sym]}
-                onChange={() => toggleSymbol(sym)}
-              />
-              {" "}{sym}
-            </label>
-          ))}
-        </fieldset>
+          <label style={styles.label}>
+            Account balance ($)
+            <input
+              type="number"
+              step="1"
+              min="0"
+              value={settings.account_balance}
+              onChange={(e) =>
+                setSettings({
+                  ...settings,
+                  account_balance: parseFloat(e.target.value) || 0,
+                })
+              }
+              style={styles.input}
+            />
+          </label>
 
-        <label style={{ display: "block", marginBottom: 12 }}>
-          <input
-            type="checkbox"
-            checked={settings.news_pause_enabled}
-            onChange={(e) => setSettings({ ...settings, news_pause_enabled: e.target.checked })}
-          />
-          {" "}Pause alerts near high-impact news
-        </label>
+          <fieldset style={styles.fieldset}>
+            <legend style={styles.legend}>Symbols enabled</legend>
+            {["NAS100", "XAUUSD", "EURUSD"].map((sym) => (
+              <label key={sym} style={styles.checkLabel}>
+                <input
+                  type="checkbox"
+                  checked={!!settings.symbols_enabled[sym]}
+                  onChange={() => toggleSymbol(sym)}
+                  style={styles.checkbox}
+                />
+                {sym}
+              </label>
+            ))}
+          </fieldset>
 
-        <button type="submit" disabled={saving} style={{ padding: "10px 20px", fontSize: 16 }}>
-          {saving ? "Saving..." : "Save settings"}
-        </button>
-        {message && <p>{message}</p>}
-      </form>
+          <label style={styles.checkLabel}>
+            <input
+              type="checkbox"
+              checked={!!settings.news_pause_enabled}
+              onChange={(e) =>
+                setSettings({
+                  ...settings,
+                  news_pause_enabled: e.target.checked,
+                })
+              }
+              style={styles.checkbox}
+            />
+            Pause alerts near high-impact news
+          </label>
+
+          <button type="submit" disabled={saving} style={styles.button}>
+            {saving ? "Saving…" : "Save settings"}
+          </button>
+
+          {message && (
+            <div
+              style={{
+                ...styles.message,
+                color: message.startsWith("Saved") ? "#86efac" : "#f87171",
+              }}
+            >
+              {message}
+            </div>
+          )}
+        </form>
+      </div>
     </div>
   );
 }
 
+const styles = {
+  page: {
+    minHeight: "100vh",
+    background: "#0a0a0a",
+    color: "#e5e5e5",
+    fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif",
+    padding: "40px 16px",
+  },
+  container: {
+    maxWidth: 480,
+    margin: "0 auto",
+  },
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 28,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: 700,
+    margin: 0,
+  },
+  back: {
+    color: "#93c5fd",
+    textDecoration: "none",
+    fontSize: 14,
+  },
+  form: {
+    background: "#141414",
+    border: "1px solid #252525",
+    borderRadius: 12,
+    padding: 24,
+  },
+  label: {
+    display: "block",
+    marginBottom: 18,
+    fontSize: 14,
+    color: "#ccc",
+  },
+  hint: {
+    display: "block",
+    fontSize: 12,
+    color: "#666",
+    marginTop: 2,
+    marginBottom: 6,
+  },
+  input: {
+    display: "block",
+    width: "100%",
+    marginTop: 6,
+    padding: "10px 12px",
+    fontSize: 15,
+    background: "#0f0f0f",
+    border: "1px solid #333",
+    borderRadius: 8,
+    color: "#e5e5e5",
+    boxSizing: "border-box",
+  },
+  fieldset: {
+    border: "1px solid #2a2a2a",
+    borderRadius: 8,
+    padding: "12px 14px",
+    marginBottom: 18,
+  },
+  legend: {
+    padding: "0 6px",
+    color: "#aaa",
+    fontSize: 13,
+  },
+  checkLabel: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 10,
+    fontSize: 14,
+    color: "#ccc",
+    cursor: "pointer",
+  },
+  checkbox: {
+    width: 16,
+    height: 16,
+  },
+  button: {
+    marginTop: 8,
+    width: "100%",
+    padding: "12px",
+    fontSize: 15,
+    fontWeight: 600,
+    background: "#2563eb",
+    color: "#fff",
+    border: "none",
+    borderRadius: 8,
+    cursor: "pointer",
+  },
+  message: {
+    marginTop: 14,
+    fontSize: 14,
+  },
+};
