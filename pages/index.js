@@ -1,87 +1,122 @@
 import { isValidSession } from "../lib/auth";
 import { getJsonFile } from "../lib/github";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 export async function getServerSideProps({ req }) {
   if (!isValidSession(req.headers.cookie)) {
     return { redirect: { destination: "/login", permanent: false } };
   }
-  const state = await getJsonFile("state.json", {});
-  const alertsLog = await getJsonFile("alerts_log.json", []);
-  return { props: { state, alertsLog } };
+
+  const [state, alertsLog, liveSetups, settings] = await Promise.all([
+    getJsonFile("state.json", {}),
+    getJsonFile("alerts_log.json", []),
+    getJsonFile("live_setups.json", { updated_at_utc: null, setups: [] }),
+    getJsonFile("settings.json", {
+      risk_percent: 0.05,
+      account_balance: 1000,
+      symbols_enabled: { NAS100: true, XAUUSD: true, EURUSD: true },
+      news_pause_enabled: true,
+    }),
+  ]);
+
+  return {
+    props: {
+      initialState: state,
+      initialAlertsLog: alertsLog,
+      initialLiveSetups: liveSetups,
+      initialSettings: settings,
+    },
+  };
 }
 
-export default function Dashboard({ state, alertsLog }) {
+const SYMBOLS = ["NAS100", "XAUUSD", "EURUSD"];
+
+export default function Dashboard({
+  initialState,
+  initialAlertsLog,
+  initialLiveSetups,
+  initialSettings,
+}) {
+  const [state, setState] = useState(initialState);
+  const [alertsLog, setAlertsLog] = useState(initialAlertsLog);
+  const [liveSetups, setLiveSetups] = useState(initialLiveSetups);
+  const [settings, setSettings] = useState(initialSettings);
   const [triggering, setTriggering] = useState(false);
   const [message, setMessage] = useState("");
+  const [filterSymbol, setFilterSymbol] = useState("ALL");
+  const [filterDirection, setFilterDirection] = useState("ALL");
+  const [lastRefresh, setLastRefresh] = useState(new Date());
+
+  const refresh = useCallback(async () => {
+    try {
+      const res = await fetch("/api/status");
+      if (!res.ok) return;
+      const data = await res.json();
+      setState(data.state || {});
+      setAlertsLog(data.alertsLog || []);
+      setLiveSetups(data.liveSetups || { setups: [] });
+      setSettings(data.settings || {});
+      setLastRefresh(new Date());
+    } catch (e) {
+      console.error("Refresh failed", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(refresh, 45000);
+    return () => clearInterval(id);
+  }, [refresh]);
 
   async function handleTrigger() {
     setTriggering(true);
     setMessage("");
-    const res = await fetch("/api/trigger", { method: "POST" });
+    try {
+      const res = await fetch("/api/trigger", { method: "POST" });
+      setMessage(res.ok ? "Bot triggered. Data will update shortly." : "Failed to trigger.");
+      if (res.ok) setTimeout(refresh, 8000);
+    } catch {
+      setMessage("Failed to trigger.");
+    }
     setTriggering(false);
-    setMessage(res.ok ? "Triggered! Check back in a minute." : "Failed to trigger.");
   }
 
-  const recentAlerts = [...alertsLog].reverse().slice(0, 20);
-  const byStrategy = {};
-  for (const a of alertsLog) {
-    byStrategy[a.strategy] = (byStrategy[a.strategy] || 0) + 1;
+  async function handleLogout() {
+    await fetch("/api/logout", { method: "POST" });
+    window.location.href = "/login";
   }
+
+  const recentAlerts = [...alertsLog]
+    .reverse()
+    .filter((a) => {
+      if (filterSymbol !== "ALL" && a.symbol !== filterSymbol) return false;
+      if (filterDirection !== "ALL" && a.direction !== filterDirection) return false;
+      return true;
+    })
+    .slice(0, 40);
+
+  const symbolsEnabled = settings.symbols_enabled || {};
+  const setups = liveSetups.setups || [];
+  const updatedAt = liveSetups.updated_at_utc
+    ? new Date(liveSetups.updated_at_utc).toLocaleString()
+    : "—";
 
   return (
-    <div style={{ maxWidth: 700, margin: "40px auto", fontFamily: "sans-serif", padding: "0 16px" }}>
-      <h1>NAS100 Alert Bot</h1>
+    <div style={styles.page}>
+      {/* HEADER */}
+      <header style={styles.header}>
+        <div>
+          <div style={styles.title}>NAS100 Alert Terminal</div>
+          <div style={styles.subtitle}>
+            Last bot update: {updatedAt} · Refreshed {lastRefresh.toLocaleTimeString()}
+          </div>
+        </div>
 
-      <div style={{ marginBottom: 24 }}>
-        <button onClick={handleTrigger} disabled={triggering} style={{ padding: "10px 20px", fontSize: 16 }}>
-          {triggering ? "Triggering..." : "Run Now"}
-        </button>
-        <a href="/settings" style={{ marginLeft: 16 }}>Settings</a>
-        {message && <p>{message}</p>}
-      </div>
-
-      <h2>Today</h2>
-      <p>Alerts sent: {state.alerts_today ?? 0}</p>
-      <p>Near-miss heads-ups: {state.near_miss_today ?? 0}</p>
-
-      <h2>Alerts by strategy (all time)</h2>
-      <ul>
-        {Object.entries(byStrategy).map(([strat, count]) => (
-          <li key={strat}>{strat}: {count}</li>
-        ))}
-        {Object.keys(byStrategy).length === 0 && <li>None yet.</li>}
-      </ul>
-
-      <h2>Recent alerts</h2>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
-        <thead>
-          <tr>
-            <th style={{ textAlign: "left" }}>Time (UTC)</th>
-            <th style={{ textAlign: "left" }}>Strategy</th>
-            <th style={{ textAlign: "left" }}>Symbol</th>
-            <th style={{ textAlign: "left" }}>Dir</th>
-            <th style={{ textAlign: "left" }}>Entry</th>
-            <th style={{ textAlign: "left" }}>SL</th>
-            <th style={{ textAlign: "left" }}>TP</th>
-          </tr>
-        </thead>
-        <tbody>
-          {recentAlerts.map((a, i) => (
-            <tr key={i}>
-              <td>{a.sent_at_utc}</td>
-              <td>{a.strategy}</td>
-              <td>{a.symbol}</td>
-              <td>{a.direction}</td>
-              <td>{a.entry}</td>
-              <td>{a.sl}</td>
-              <td>{a.tp}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {recentAlerts.length === 0 && <p>No alerts yet.</p>}
-    </div>
-  );
-}
-
+        <div style={styles.headerRight}>
+          <div style={styles.symbolLights}>
+            {SYMBOLS.map((s) => (
+              <span key={s} style={styles.symbolChip}>
+                <span
+                  style={{
+                    ...styles.dot,
+                    background: symbolsEnabled[s] !== false ? "#22c55e" : "#555",
+                  }}
