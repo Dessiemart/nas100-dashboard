@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
+import { theme } from "../styles/theme";
 
 export default function Login() {
   const [password, setPassword] = useState("");
@@ -43,7 +44,7 @@ export default function Login() {
             style={styles.input}
             autoFocus
           />
-          <button type="submit" disabled={loading} style={styles.button}>
+          <button type="submit" disabled={loading} className="btn btn-primary" style={styles.button}>
             {loading ? "Logging in…" : "Log in"}
           </button>
         </form>
@@ -57,40 +58,43 @@ export default function Login() {
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#0a0a0a",
+    background: theme.color.bg,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif",
+    fontFamily: theme.font.sans,
     padding: 16,
   },
   card: {
     width: "100%",
     maxWidth: 360,
-    background: "#141414",
-    border: "1px solid #252525",
-    borderRadius: 12,
-    padding: "32px 28px",
+    background: theme.color.bgElevated,
+    border: `1px solid ${theme.color.border}`,
+    borderRadius: theme.radius.lg,
+    padding: "36px 28px",
   },
   title: {
-    fontSize: 20,
-    fontWeight: 700,
-    color: "#e5e5e5",
-    marginBottom: 6,
+    fontFamily: theme.font.serif,
+    fontSize: 26,
+    fontWeight: 600,
+    color: theme.color.text,
+    marginBottom: 8,
   },
   subtitle: {
-    fontSize: 13,
-    color: "#888",
+    fontFamily: theme.font.mono,
+    fontSize: 12,
+    color: theme.color.textMuted,
     marginBottom: 24,
   },
   input: {
     width: "100%",
     padding: "12px 14px",
+    fontFamily: theme.font.mono,
     fontSize: 15,
-    background: "#0f0f0f",
-    border: "1px solid #333",
-    borderRadius: 8,
-    color: "#e5e5e5",
+    background: theme.color.bg,
+    border: `1px solid ${theme.color.borderStrong}`,
+    borderRadius: theme.radius.sm,
+    color: theme.color.text,
     boxSizing: "border-box",
     outline: "none",
   },
@@ -100,15 +104,14 @@ const styles = {
     padding: "12px",
     fontSize: 15,
     fontWeight: 600,
-    background: "#2563eb",
-    color: "#fff",
+    background: "#ffffff",
+    color: "#000000",
     border: "none",
-    borderRadius: 8,
-    cursor: "pointer",
+    borderRadius: theme.radius.sm,
   },
   error: {
     marginTop: 14,
-    color: "#f87171",
+    color: theme.color.danger,
     fontSize: 14,
   },
 };
