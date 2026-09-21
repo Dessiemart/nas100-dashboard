@@ -1,6 +1,7 @@
 import { isValidSession } from "../lib/auth";
 import { getJsonFile } from "../lib/github";
 import { useState, useEffect, useCallback } from "react";
+import { theme } from "../styles/theme";
 
 export async function getServerSideProps({ req }) {
   if (!isValidSession(req.headers.cookie)) {
@@ -118,7 +119,7 @@ export default function Dashboard({
                 <span
                   style={{
                     ...styles.dot,
-                    background: symbolsEnabled[s] !== false ? "#22c55e" : "#555",
+                    background: symbolsEnabled[s] !== false ? theme.color.success : theme.color.textFaint,
                   }}
                 />
                 {s}
@@ -126,16 +127,16 @@ export default function Dashboard({
             ))}
           </div>
 
-          <button onClick={refresh} style={styles.btnSecondary}>
+          <button onClick={refresh} className="btn btn-secondary" style={styles.btnSecondary}>
             Refresh
           </button>
-          <button onClick={handleTrigger} disabled={triggering} style={styles.btnPrimary}>
+          <button onClick={handleTrigger} disabled={triggering} className="btn btn-primary" style={styles.btnPrimary}>
             {triggering ? "Triggering…" : "Run Now"}
           </button>
-          <a href="/settings" style={styles.link}>
+          <a href="/settings" className="link-violet">
             Settings
           </a>
-          <button onClick={handleLogout} style={styles.btnGhost}>
+          <button onClick={handleLogout} className="btn btn-ghost" style={styles.btnGhost}>
             Logout
           </button>
         </div>
@@ -145,19 +146,19 @@ export default function Dashboard({
 
       {/* TODAY STATS */}
       <section style={styles.statsRow}>
-        <div style={styles.statCard}>
+        <div className="card-hover" style={styles.statCard}>
           <div style={styles.statLabel}>Alerts today</div>
           <div style={styles.statValue}>{state.alerts_today ?? 0}</div>
         </div>
-        <div style={styles.statCard}>
+        <div className="card-hover" style={styles.statCard}>
           <div style={styles.statLabel}>Near-misses today</div>
           <div style={styles.statValue}>{state.near_miss_today ?? 0}</div>
         </div>
-        <div style={styles.statCard}>
+        <div className="card-hover" style={styles.statCard}>
           <div style={styles.statLabel}>Active setups</div>
           <div style={styles.statValue}>{setups.length}</div>
         </div>
-        <div style={styles.statCard}>
+        <div className="card-hover" style={styles.statCard}>
           <div style={styles.statLabel}>News pause</div>
           <div style={styles.statValue}>
             {settings.news_pause_enabled ? "ON" : "OFF"}
@@ -175,7 +176,7 @@ export default function Dashboard({
         ) : (
           <div style={styles.setupsGrid}>
             {setups.map((s) => (
-              <div key={s.key || `\( {s.strategy}- \){s.symbol}`} style={styles.setupCard}>
+              <div key={s.key || `${s.strategy}-${s.symbol}`} className="card-hover" style={styles.setupCard}>
                 <div style={styles.setupHeader}>
                   <span style={styles.setupName}>
                     {s.strategy} · {s.symbol}
@@ -183,7 +184,7 @@ export default function Dashboard({
                   <span
                     style={{
                       ...styles.dirBadge,
-                      background: s.leaning === "BUY" ? "#166534" : s.leaning === "SELL" ? "#7f1d1d" : "#333",
+                      background: s.leaning === "BUY" ? "#166534" : s.leaning === "SELL" ? "#7f1d1d" : "#222",
                     }}
                   >
                     {s.leaning || "—"}
@@ -197,14 +198,14 @@ export default function Dashboard({
                     style={{
                       ...styles.progressFill,
                       width: `${(s.confirmed / Math.max(s.total, 1)) * 100}%`,
-                      background: s.confirmed === s.total ? "#22c55e" : "#eab308",
+                      background: s.confirmed === s.total ? theme.color.success : theme.color.warning,
                     }}
                   />
                 </div>
                 <ul style={styles.stepList}>
                   {(s.steps || []).map((step, i) => (
                     <li key={i} style={styles.stepItem}>
-                      <span style={{ color: step.ok ? "#22c55e" : "#666" }}>
+                      <span style={{ color: step.ok ? theme.color.success : theme.color.textFaint }}>
                         {step.ok ? "✓" : "○"}
                       </span>{" "}
                       {step.label}
@@ -265,13 +266,13 @@ export default function Dashboard({
               <tbody>
                 {recentAlerts.map((a, i) => (
                   <tr key={i} style={styles.tr}>
-                    <td style={styles.td}>{a.sent_at_utc?.replace("T", " ").slice(0, 19)}</td>
+                    <td style={styles.tdMono}>{a.sent_at_utc?.replace("T", " ").slice(0, 19)}</td>
                     <td style={styles.td}>{a.strategy}</td>
                     <td style={styles.td}>{a.symbol}</td>
                     <td
                       style={{
                         ...styles.td,
-                        color: a.direction === "buy" ? "#22c55e" : "#ef4444",
+                        color: a.direction === "buy" ? theme.color.success : theme.color.danger,
                         fontWeight: 600,
                       }}
                     >
@@ -294,9 +295,9 @@ export default function Dashboard({
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#0a0a0a",
-    color: "#e5e5e5",
-    fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif",
+    background: theme.color.bg,
+    color: theme.color.text,
+    fontFamily: theme.font.sans,
     padding: "20px 24px 60px",
   },
   header: {
@@ -306,18 +307,20 @@ const styles = {
     flexWrap: "wrap",
     gap: 16,
     marginBottom: 24,
-    borderBottom: "1px solid #222",
+    borderBottom: `1px solid ${theme.color.border}`,
     paddingBottom: 16,
   },
   title: {
-    fontSize: 22,
-    fontWeight: 700,
-    letterSpacing: "-0.02em",
+    fontFamily: theme.font.serif,
+    fontSize: 32,
+    fontWeight: 600,
+    letterSpacing: "-0.01em",
   },
   subtitle: {
-    fontSize: 13,
-    color: "#888",
-    marginTop: 4,
+    fontFamily: theme.font.mono,
+    fontSize: 12,
+    color: theme.color.textMuted,
+    marginTop: 6,
   },
   headerRight: {
     display: "flex",
@@ -334,12 +337,13 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: 5,
+    fontFamily: theme.font.mono,
     fontSize: 12,
-    color: "#aaa",
-    background: "#161616",
+    color: theme.color.textMuted,
+    background: theme.color.bgElevated,
     padding: "4px 8px",
-    borderRadius: 6,
-    border: "1px solid #2a2a2a",
+    borderRadius: theme.radius.sm,
+    border: `1px solid ${theme.color.border}`,
   },
   dot: {
     width: 7,
@@ -348,46 +352,38 @@ const styles = {
     display: "inline-block",
   },
   btnPrimary: {
-    background: "#2563eb",
-    color: "#fff",
+    background: "#ffffff",
+    color: "#000000",
     border: "none",
     padding: "8px 16px",
-    borderRadius: 6,
+    borderRadius: theme.radius.sm,
     fontSize: 14,
     fontWeight: 600,
-    cursor: "pointer",
   },
   btnSecondary: {
-    background: "#1f1f1f",
-    color: "#e5e5e5",
-    border: "1px solid #333",
+    background: "transparent",
+    color: theme.color.text,
+    border: `1px solid ${theme.color.borderStrong}`,
     padding: "8px 14px",
-    borderRadius: 6,
+    borderRadius: theme.radius.sm,
     fontSize: 13,
-    cursor: "pointer",
   },
   btnGhost: {
     background: "transparent",
-    color: "#888",
-    border: "1px solid #333",
+    color: theme.color.textMuted,
+    border: `1px solid ${theme.color.border}`,
     padding: "8px 12px",
-    borderRadius: 6,
+    borderRadius: theme.radius.sm,
     fontSize: 13,
-    cursor: "pointer",
-  },
-  link: {
-    color: "#93c5fd",
-    textDecoration: "none",
-    fontSize: 14,
-    padding: "8px 4px",
   },
   message: {
-    background: "#1e3a5f",
-    color: "#bfdbfe",
+    background: theme.color.violetDim,
+    color: theme.color.violet,
     padding: "10px 14px",
-    borderRadius: 6,
+    borderRadius: theme.radius.sm,
     marginBottom: 16,
     fontSize: 14,
+    border: `1px solid ${theme.color.border}`,
   },
   statsRow: {
     display: "grid",
@@ -396,19 +392,20 @@ const styles = {
     marginBottom: 28,
   },
   statCard: {
-    background: "#141414",
-    border: "1px solid #252525",
-    borderRadius: 8,
+    background: theme.color.bgElevated,
+    border: `1px solid ${theme.color.border}`,
+    borderRadius: theme.radius.lg,
     padding: "14px 16px",
   },
   statLabel: {
     fontSize: 12,
-    color: "#888",
+    color: theme.color.textMuted,
     marginBottom: 4,
   },
   statValue: {
+    fontFamily: theme.font.mono,
     fontSize: 22,
-    fontWeight: 700,
+    fontWeight: 600,
   },
   section: {
     marginBottom: 36,
@@ -422,30 +419,31 @@ const styles = {
     marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontFamily: theme.font.serif,
+    fontSize: 18,
     fontWeight: 600,
     margin: 0,
-    color: "#ccc",
+    color: theme.color.text,
   },
   filters: {
     display: "flex",
     gap: 8,
   },
   select: {
-    background: "#161616",
-    color: "#e5e5e5",
-    border: "1px solid #333",
-    borderRadius: 6,
+    background: theme.color.bgElevated,
+    color: theme.color.text,
+    border: `1px solid ${theme.color.borderStrong}`,
+    borderRadius: theme.radius.sm,
     padding: "6px 10px",
     fontSize: 13,
   },
   empty: {
-    background: "#141414",
-    border: "1px dashed #2a2a2a",
-    borderRadius: 8,
+    background: theme.color.bgElevated,
+    border: `1px dashed ${theme.color.border}`,
+    borderRadius: theme.radius.lg,
     padding: "28px 16px",
     textAlign: "center",
-    color: "#666",
+    color: theme.color.textFaint,
     fontSize: 14,
   },
   setupsGrid: {
@@ -454,9 +452,9 @@ const styles = {
     gap: 14,
   },
   setupCard: {
-    background: "#141414",
-    border: "1px solid #252525",
-    borderRadius: 10,
+    background: theme.color.bgElevated,
+    border: `1px solid ${theme.color.border}`,
+    borderRadius: theme.radius.lg,
     padding: 16,
   },
   setupHeader: {
@@ -466,10 +464,12 @@ const styles = {
     marginBottom: 8,
   },
   setupName: {
-    fontSize: 14,
+    fontFamily: theme.font.mono,
+    fontSize: 13,
     fontWeight: 600,
   },
   dirBadge: {
+    fontFamily: theme.font.mono,
     fontSize: 11,
     fontWeight: 700,
     padding: "3px 8px",
@@ -477,13 +477,14 @@ const styles = {
     color: "#fff",
   },
   progressText: {
+    fontFamily: theme.font.mono,
     fontSize: 12,
-    color: "#aaa",
+    color: theme.color.textMuted,
     marginBottom: 6,
   },
   progressBar: {
     height: 6,
-    background: "#222",
+    background: theme.color.border,
     borderRadius: 3,
     overflow: "hidden",
     marginBottom: 12,
@@ -491,7 +492,7 @@ const styles = {
   progressFill: {
     height: "100%",
     borderRadius: 3,
-    transition: "width 0.3s",
+    transition: "width 300ms ease-out",
   },
   stepList: {
     listStyle: "none",
@@ -501,12 +502,12 @@ const styles = {
   },
   stepItem: {
     marginBottom: 4,
-    color: "#bbb",
+    color: theme.color.textMuted,
   },
   tableWrap: {
     overflowX: "auto",
-    border: "1px solid #252525",
-    borderRadius: 8,
+    border: `1px solid ${theme.color.border}`,
+    borderRadius: theme.radius.lg,
   },
   table: {
     width: "100%",
@@ -516,14 +517,14 @@ const styles = {
   th: {
     textAlign: "left",
     padding: "10px 12px",
-    background: "#161616",
-    color: "#888",
+    background: theme.color.bgElevated,
+    color: theme.color.textMuted,
     fontWeight: 600,
-    borderBottom: "1px solid #252525",
+    borderBottom: `1px solid ${theme.color.border}`,
     whiteSpace: "nowrap",
   },
   tr: {
-    borderBottom: "1px solid #1c1c1c",
+    borderBottom: `1px solid ${theme.color.border}`,
   },
   td: {
     padding: "9px 12px",
@@ -531,7 +532,9 @@ const styles = {
   },
   tdMono: {
     padding: "9px 12px",
-    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+    fontFamily: theme.font.mono,
     fontSize: 12.5,
+    color: theme.color.textMuted,
+    whiteSpace: "nowrap",
   },
 };
