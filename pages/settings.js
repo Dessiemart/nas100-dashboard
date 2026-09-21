@@ -1,6 +1,7 @@
 import { isValidSession } from "../lib/auth";
 import { getJsonFile } from "../lib/github";
 import { useState } from "react";
+import { theme } from "../styles/theme";
 
 const DEFAULT_SETTINGS = {
   risk_percent: 0.05,
@@ -62,7 +63,7 @@ export default function Settings({ initialSettings }) {
       <div style={styles.container}>
         <div style={styles.header}>
           <h1 style={styles.title}>Settings</h1>
-          <a href="/" style={styles.back}>
+          <a href="/" className="link-violet">
             ← Back to terminal
           </a>
         </div>
@@ -134,7 +135,7 @@ export default function Settings({ initialSettings }) {
             Pause alerts near high-impact news
           </label>
 
-          <button type="submit" disabled={saving} style={styles.button}>
+          <button type="submit" disabled={saving} className="btn btn-primary" style={styles.button}>
             {saving ? "Saving…" : "Save settings"}
           </button>
 
@@ -142,7 +143,7 @@ export default function Settings({ initialSettings }) {
             <div
               style={{
                 ...styles.message,
-                color: message.startsWith("Saved") ? "#86efac" : "#f87171",
+                color: message.startsWith("Saved") ? theme.color.success : theme.color.danger,
               }}
             >
               {message}
@@ -157,9 +158,9 @@ export default function Settings({ initialSettings }) {
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#0a0a0a",
-    color: "#e5e5e5",
-    fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif",
+    background: theme.color.bg,
+    color: theme.color.text,
+    fontFamily: theme.font.sans,
     padding: "40px 16px",
   },
   container: {
@@ -173,31 +174,28 @@ const styles = {
     marginBottom: 28,
   },
   title: {
-    fontSize: 22,
-    fontWeight: 700,
+    fontFamily: theme.font.serif,
+    fontSize: 28,
+    fontWeight: 600,
     margin: 0,
   },
-  back: {
-    color: "#93c5fd",
-    textDecoration: "none",
-    fontSize: 14,
-  },
   form: {
-    background: "#141414",
-    border: "1px solid #252525",
-    borderRadius: 12,
+    background: theme.color.bgElevated,
+    border: `1px solid ${theme.color.border}`,
+    borderRadius: theme.radius.lg,
     padding: 24,
   },
   label: {
     display: "block",
     marginBottom: 18,
     fontSize: 14,
-    color: "#ccc",
+    color: theme.color.text,
   },
   hint: {
     display: "block",
-    fontSize: 12,
-    color: "#666",
+    fontFamily: theme.font.mono,
+    fontSize: 11,
+    color: theme.color.textFaint,
     marginTop: 2,
     marginBottom: 6,
   },
@@ -206,22 +204,23 @@ const styles = {
     width: "100%",
     marginTop: 6,
     padding: "10px 12px",
+    fontFamily: theme.font.mono,
     fontSize: 15,
-    background: "#0f0f0f",
-    border: "1px solid #333",
-    borderRadius: 8,
-    color: "#e5e5e5",
+    background: theme.color.bg,
+    border: `1px solid ${theme.color.borderStrong}`,
+    borderRadius: theme.radius.sm,
+    color: theme.color.text,
     boxSizing: "border-box",
   },
   fieldset: {
-    border: "1px solid #2a2a2a",
-    borderRadius: 8,
+    border: `1px solid ${theme.color.border}`,
+    borderRadius: theme.radius.sm,
     padding: "12px 14px",
     marginBottom: 18,
   },
   legend: {
     padding: "0 6px",
-    color: "#aaa",
+    color: theme.color.textMuted,
     fontSize: 13,
   },
   checkLabel: {
@@ -230,12 +229,13 @@ const styles = {
     gap: 8,
     marginBottom: 10,
     fontSize: 14,
-    color: "#ccc",
+    color: theme.color.text,
     cursor: "pointer",
   },
   checkbox: {
     width: 16,
     height: 16,
+    accentColor: theme.color.violet,
   },
   button: {
     marginTop: 8,
@@ -243,11 +243,10 @@ const styles = {
     padding: "12px",
     fontSize: 15,
     fontWeight: 600,
-    background: "#2563eb",
-    color: "#fff",
+    background: "#ffffff",
+    color: "#000000",
     border: "none",
-    borderRadius: 8,
-    cursor: "pointer",
+    borderRadius: theme.radius.sm,
   },
   message: {
     marginTop: 14,
