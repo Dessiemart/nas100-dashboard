@@ -1,0 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #000000;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(146, 129, 247, 0.3);
+}
+
+/* Interactive elements get restrained, expressive motion - 150ms
+   ease-out, per spec. Inline styles can't do :hover, so these
+   button/card treatments live here. */
+
+.btn {
+  transition: border-color 150ms ease-out, background-color 150ms ease-out, opacity 150ms ease-out;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  opacity: 0.85;
+}
+
+.btn-secondary:hover,
+.btn-ghost:hover {
+  border-color: #3a3a3a;
+  background: #161616;
+}
+
+.card-hover {
+  transition: border-color 150ms ease-out;
+}
+
+.card-hover:hover {
+  border-color: #333333;
+}
+
+.link-violet {
+  color: #9281f7;
+  text-decoration: none;
+  transition: opacity 150ms ease-out;
+}
+
+.link-violet:hover {
+  opacity: 0.75;
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: #9281f7 !important;
+}
